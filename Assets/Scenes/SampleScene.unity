@@ -490,7 +490,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43475ae242c43914ba219bc892e3d511, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shootCooldown: 1
+  shootCooldown: 0.1
   arrowPrefab: {fileID: 8359086847269264249, guid: e49745a8229c66d489b4bfa0280980f1, type: 3}
   arrowSpawnPoint: {fileID: 817568348}
   grabRadius: 1

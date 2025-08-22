@@ -183,3 +183,6 @@ MonoBehaviour:
   attackCooldown: 1
   knockbackForce: 6
   deathVfx: {fileID: 0}
+  healthBarPrefab: {fileID: 4981881442711480907, guid: 4e39711d4d7e8e74db47d57d465123d8, type: 3}
+  healthBarOffset: {x: 0, y: 1, z: 0}
+  fillPath: Fill

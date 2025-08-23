@@ -23,6 +23,13 @@ public class ArrowDamage : MonoBehaviour
     public float sweepThickness = 0.7f;
     public float sweepPadding = 0.03f;
 
+    [Header("VFX")]
+    [Tooltip("Particle prefab to spawn when an enemy is hit.")]
+    public GameObject bloodImpactVfx;
+    [Range(0.1f, 3f)] public float vfxScale = 1f;
+    [Tooltip("If true, parent the VFX to the enemy so it moves with them.")]
+    public bool attachVfxToEnemy = false;
+
     private Rigidbody2D rb;
     private Collider2D col;
     private bool hasHit;
@@ -31,8 +38,13 @@ public class ArrowDamage : MonoBehaviour
     private int groundMask;
     private int stickMask;
 
-    private Vector2 prevPos;               // for sweep
+    private Vector2 prevPos;                       // for sweep
     private Vector2 lastTravelDir = Vector2.right; // used when OnTriggerEnter fires without a sweep hit
+
+    // cached precise impact info for VFX/placement
+    private Vector2 lastHitPoint;
+    private Vector2 lastHitNormal;
+    private bool hasLastHitData = false;
 
     void Awake()
     {
@@ -74,6 +86,9 @@ public class ArrowDamage : MonoBehaviour
 
             if (hit.collider)
             {
+                hasLastHitData = true;
+                lastHitPoint = hit.point;
+                lastHitNormal = hit.normal.sqrMagnitude > 0.0001f ? hit.normal : -dir;
                 ResolveHit(hit.collider, hit);
             }
             else
@@ -93,7 +108,20 @@ public class ArrowDamage : MonoBehaviour
         if (((1 << other.gameObject.layer) & stickMask) == 0) return;
 
         // Try to get a precise point along our travel direction
-        RaycastHit2D hit = Physics2D.Raycast(rb.position - lastTravelDir * 0.3f, lastTravelDir, 0.6f, stickMask);
+        RaycastHit2D hit = Physics2D.Raycast(
+            rb.position - lastTravelDir * 0.3f, lastTravelDir, 0.6f, stickMask);
+
+        if (hit.collider)
+        {
+            hasLastHitData = true;
+            lastHitPoint = hit.point;
+            lastHitNormal = hit.normal.sqrMagnitude > 0.0001f ? hit.normal : -lastTravelDir;
+        }
+        else
+        {
+            hasLastHitData = false;
+        }
+
         ResolveHit(other, hit);
     }
 
@@ -106,8 +134,11 @@ public class ArrowDamage : MonoBehaviour
         if (goblin != null)
         {
             goblin.TakeDamage(damage, (Vector2)transform.position, knockbackMultiplier);
-            StickAt(hit, parent: (other.attachedRigidbody ? other.attachedRigidbody.transform : other.transform),
-                    allowParent: stickToTarget, useGroundAlign: false);
+            SpawnBloodVfx(other);
+            StickAt(hit,
+                parent: (other.attachedRigidbody ? other.attachedRigidbody.transform : other.transform),
+                allowParent: stickToTarget,
+                useGroundAlign: false);
             return;
         }
 
@@ -142,7 +173,7 @@ public class ArrowDamage : MonoBehaviour
         {
             Vector2 impactPoint = hit.point;
 
-            // Align to direction (for enemies) or to travel direction on ground
+            // Align to direction
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             transform.rotation = Quaternion.Euler(0, 0, angle - 90f);
 
@@ -164,5 +195,36 @@ public class ArrowDamage : MonoBehaviour
         var sd = GetComponent<ArrowSelfDestruct>();
         if (sd) sd.Shorten(lifeAfterHit);
         else Destroy(gameObject, lifeAfterHit);
+    }
+
+    private void SpawnBloodVfx(Collider2D target)
+    {
+        if (!bloodImpactVfx) return;
+
+        Vector2 p;
+        Vector2 n;
+
+        if (hasLastHitData)
+        {
+            p = lastHitPoint;
+            n = lastHitNormal;
+        }
+        else
+        {
+            // Approximate using collider geometry
+            p = target.ClosestPoint(transform.position);
+            Vector2 center = target.bounds.center;
+            n = (p - center).sqrMagnitude > 0.0001f ? (p - center).normalized : -lastTravelDir;
+        }
+
+        float zAngle = Mathf.Atan2(n.y, n.x) * Mathf.Rad2Deg - 90f;
+        Quaternion rot = Quaternion.Euler(0, 0, zAngle);
+
+        Transform parent = (attachVfxToEnemy && target) ? target.transform : null;
+        var vfx = Instantiate(bloodImpactVfx, p, rot, parent);
+        vfx.transform.localScale *= vfxScale;
+
+        // subtle randomization
+        vfx.transform.Rotate(0, 0, Random.Range(-10f, 10f));
     }
 }

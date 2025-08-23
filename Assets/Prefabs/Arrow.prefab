@@ -191,6 +191,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   damage: 10
   knockbackMultiplier: 1
-  enemyMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  enemyLayerName: Enemy
+  groundLayerName: Ground
+  stickToTarget: 1
+  stickToGround: 1
+  lifeAfterHit: 2
+  tipOffsetFromPivot: 0.25
+  sweepThickness: 0.7
+  sweepPadding: 0.03
+  bloodImpactVfx: {fileID: 5687038426079466004, guid: 3959084410b074143990f4291044fcfe, type: 3}
+  vfxScale: 0.22
+  attachVfxToEnemy: 1

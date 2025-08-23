@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: -8849922148916699296}
   - component: {fileID: -6479191908624582586}
   - component: {fileID: -8519097724752285657}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Goblin
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -176,13 +176,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   castle: {fileID: 0}
-  moveSpeed: 2
+  moveSpeed: 1
   stopDistance: 0.5
+  maxSpeed: 2
+  normalLinearDrag: 0
+  atCastleLinearDrag: 8
+  castleAimAnchor: {fileID: 0}
+  groundAimOffset: 0.15
+  frontGap: 0.1
+  goblinRadius: 0.15
+  enemyLayerName: Enemy
+  minSeparation: 0.18
+  separationRadius: 0.25
+  separationForce: 4
+  ignoreEnemyEnemyCollision: 1
   maxHealth: 20
   touchDamage: 5
   attackCooldown: 1
   knockbackForce: 6
+  knockbackAtCastleMultiplier: 0
   deathVfx: {fileID: 0}
-  healthBarPrefab: {fileID: 4981881442711480907, guid: 4e39711d4d7e8e74db47d57d465123d8, type: 3}
-  healthBarOffset: {x: 0, y: 1, z: 0}
-  fillPath: Fill
+  barWidth: 0.5
+  barHeight: 0.06
+  barYOffset: 0.5
+  barBgColor: {r: 0, g: 0, b: 0, a: 0.65}
+  barFgColor: {r: 0.2, g: 0.85, b: 0.2, a: 1}
+  barSortingOrder: 50

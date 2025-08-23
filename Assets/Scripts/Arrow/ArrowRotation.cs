@@ -11,6 +11,8 @@ public class ArrowRotation : MonoBehaviour
 
     void Update()
     {
+        if (!rb || rb.isKinematic) return; // stop updating after we "stick"
+
         if (rb.linearVelocity.sqrMagnitude > 0.01f)
         {
             float angle = Mathf.Atan2(rb.linearVelocity.y, rb.linearVelocity.x) * Mathf.Rad2Deg;

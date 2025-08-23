@@ -4,6 +4,11 @@ using UnityEngine;
 
 public class Spawner : MonoBehaviour
 {
+    [Header("Debug / Safety")]
+    public bool debugSpawns = true;
+    public bool disableOverlapGuard = false;   // quick kill‑switch while testing
+    public bool fallbackToFlatGroundIfRayMiss = true;
+
     [Header("Level (optional if you spawn manually)")]
     public LevelAsset level;
     public bool autoStart = true;
@@ -242,71 +247,105 @@ public class Spawner : MonoBehaviour
             Vector2 groundPoint;
             if (useRaycastToGround)
             {
-                if (groundMask.value == 0)
-                    Debug.LogWarning("[Spawner] groundMask not set; raycast may miss.");
-
                 Vector2 origin = new Vector2(spawnX, raycastStartY);
                 var hit = Physics2D.Raycast(origin, Vector2.down, raycastMaxDist, groundMask);
-                if (!hit.collider) continue; // try another X
-                groundPoint = hit.point;
+                if (!hit.collider) { if (fallbackToFlatGroundIfRayMiss) groundPoint = new Vector2(spawnX, flatGroundY); else continue; }
+                else groundPoint = hit.point;
             }
-            else
-            {
-                groundPoint = new Vector2(spawnX, flatGroundY);
-            }
+            else groundPoint = new Vector2(spawnX, flatGroundY);
 
             // 2) instantiate
             var go = Instantiate(enemyPrefab, groundPoint, Quaternion.identity);
 
-            // 3) snap bottom of collider to ground
-            var col = go.GetComponent<Collider2D>();
-            if (col)
+            // 3) snap bottom of body collider to ground
+            var bodyCol = go.GetComponentInChildren<Collider2D>();
+            if (bodyCol)
             {
-                float halfH = col.bounds.extents.y;
-                var p = go.transform.position;
-                p.y = groundPoint.y + halfH;
+                float halfH = bodyCol.bounds.extents.y;
+                var p = go.transform.position; p.y = groundPoint.y + halfH;
                 go.transform.position = p;
+                Physics2D.SyncTransforms(); // critical before any overlap query
             }
 
-            // 4) give castle ref if enemy type supports it
+            // 4) wire refs
             var gob = go.GetComponent<Goblin>();
             if (gob) gob.castle = castle ? castle : defaultCastle;
-
-            // 5) interpolation nicer
             var rb = go.GetComponent<Rigidbody2D>();
             if (rb) rb.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-            // 6) overlap guard
-            if (enemyMask.value != 0)
+            // 5) overlap guard — only block **other Goblins**
+            if (!disableOverlapGuard && enemyMask.value != 0 && bodyCol)
             {
-                var results = new Collider2D[8];
-                int count = Physics2D.OverlapCircleNonAlloc(go.transform.position, spawnPadding, results, enemyMask);
-                for (int i = 0; i < count; i++)
+                var filter = new ContactFilter2D { useLayerMask = true, layerMask = enemyMask, useTriggers = false };
+                var hits = new Collider2D[32];
+                int n = bodyCol.Overlap(filter, hits);
+
+                bool blocked = false;
+                for (int i = 0; i < n; i++)
                 {
-                    var c = results[i];
-                    if (c && (!col || c != col))
+                    var c = hits[i];
+                    if (!c) continue;
+                    if (c.transform.root == go.transform.root) continue; // self
+                    if (!c.GetComponentInParent<Goblin>()) continue;     // only goblins block
+                    blocked = true;
+
+#if UNITY_EDITOR
+                Debug.Log($"[Spawn] blocked by {c.name} (layer={LayerMask.LayerToName(c.gameObject.layer)}) at {c.bounds.center}", c);
+#endif
+                    break;
+                }
+
+                // optional proximity buffer using expanded bounds (also only goblins)
+                if (!blocked && spawnPadding > 0f)
+                {
+                    var b = bodyCol.bounds;
+                    Vector2 size = new Vector2(b.size.x + 2f * spawnPadding, b.size.y + 2f * spawnPadding);
+                    var nearAll = Physics2D.OverlapBoxAll(b.center, size, 0f, enemyMask);
+                    for (int i = 0; i < nearAll.Length; i++)
                     {
-                        Destroy(go);
-                        goto TryAgain;
+                        var c = nearAll[i];
+                        if (!c) continue;
+                        if (c.transform.root == go.transform.root) continue;
+                        if (c.isTrigger) continue;
+                        if (!c.GetComponentInParent<Goblin>()) continue; // only goblins block
+                        blocked = true;
+
+#if UNITY_EDITOR
+                    Debug.Log($"[Spawn] proximity blocked by {c.name} (layer={LayerMask.LayerToName(c.gameObject.layer)})", c);
+#endif
+                        break;
                     }
+                }
+
+                if (blocked)
+                {
+                    Destroy(go);
+                    continue; // try another X
                 }
             }
 
-            // 7) tag as Enemy so counters work
+            // 6) tag last so our counters see it after success
             go.tag = "Enemy";
+#if UNITY_EDITOR
+        if (debugSpawns) Debug.Log($"[Spawn] OK at {go.transform.position}", go);
+#endif
             return true;
-
-        TryAgain:;
         }
 
+#if UNITY_EDITOR
+    if (debugSpawns) Debug.LogWarning("[Spawn] failed after maxSpawnTries");
+#endif
         return false;
     }
+
+
+
 
     // ------------------ COUNTS ------------------
 
     int CountAllEnemies()
     {
-        // Uses tag "Enemy" � set it on your enemy prefabs
+        // Uses tag "Enemy" � set it on your enemy prefabs
         return GameObject.FindGameObjectsWithTag("Enemy").Length;
     }
 
@@ -350,5 +389,15 @@ public class Spawner : MonoBehaviour
     {
         Gizmos.color = new Color(0.2f, 1f, 0.2f, 0.35f);
         Gizmos.DrawCube(new Vector3(center.x, center.y, 0f), new Vector3(halfWidth * 2f, 0.3f, 1f));
+
+        if (useRaycastToGround)
+        {
+            Gizmos.color = Color.cyan;
+            Vector3 a = new Vector3(center.x - halfWidth, raycastStartY, 0);
+            Vector3 b = new Vector3(center.x + halfWidth, raycastStartY, 0);
+            Gizmos.DrawLine(a, a + Vector3.down * raycastMaxDist);
+            Gizmos.DrawLine(b, b + Vector3.down * raycastMaxDist);
+        }
     }
+
 }

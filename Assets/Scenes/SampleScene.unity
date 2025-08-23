@@ -471,6 +471,7 @@ GameObject:
   - component: {fileID: 1010778762}
   - component: {fileID: 1010778765}
   - component: {fileID: 1010778766}
+  - component: {fileID: 1010778767}
   m_Layer: 0
   m_Name: Tower
   m_TagString: Untagged
@@ -490,7 +491,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43475ae242c43914ba219bc892e3d511, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shootCooldown: 0.1
+  shootCooldown: 0.5
   arrowPrefab: {fileID: 8359086847269264249, guid: e49745a8229c66d489b4bfa0280980f1, type: 3}
   arrowSpawnPoint: {fileID: 817568348}
   grabRadius: 1
@@ -503,6 +504,10 @@ MonoBehaviour:
   grabCircleLine: {fileID: 0}
   circleSegments: 80
   lineWidth: 0.035
+  cooldownRadius: 0.35
+  cooldownOffset: {x: 0.9, y: 1.2}
+  pieColor: {r: 1, g: 0.3, b: 1, a: 0.85}
+  pieBgColor: {r: 1, g: 1, b: 1, a: 0.2}
 --- !u!212 &1010778763
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -567,8 +572,8 @@ Transform:
   m_GameObject: {fileID: 1010778761}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -9.36, y: -2.8, z: 0}
-  m_LocalScale: {x: 0.5779578, y: 0.5750138, z: 1}
+  m_LocalPosition: {x: -9.3987, y: -2.9056, z: 0}
+  m_LocalScale: {x: 0.5451248, y: 0.52804446, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 817568348}
@@ -694,13 +699,32 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
+  currentHealth: 100
   onCastleDamaged:
     m_PersistentCalls:
       m_Calls: []
   onCastleDestroyed:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1010778767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1010778761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f125f6664428d7648a430718062e139b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: {fileID: 0}
+  barWidth: 1.4
+  barHeight: 0.14
+  yOffset: 1.3
+  bgColor: {r: 0, g: 0, b: 0, a: 0.65}
+  fgColor: {r: 0.2, g: 0.85, b: 0.2, a: 1}
+  sortingOrder: 80
 --- !u!1 &1451494072
 GameObject:
   m_ObjectHideFlags: 0
@@ -730,8 +754,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5efa326dfb167343b20395bcdeadc2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  goblinPrefab: {fileID: -8519097724752285657, guid: 61413fab839650b40a6fcadde2cc3b16, type: 3}
+  debugSpawns: 1
+  disableOverlapGuard: 0
+  fallbackToFlatGroundIfRayMiss: 1
+  level: {fileID: 11400000, guid: a0ee134f8552783458f8db5b62246396, type: 2}
+  autoStart: 1
   castle: {fileID: 1010778764}
+  defaultCastle: {fileID: 1010778764}
   spawnInterval: 2
   maxAlive: 20
   center: {x: 8, y: 0}
@@ -748,6 +777,21 @@ MonoBehaviour:
     m_Bits: 4294967295
   spawnPadding: 0.4
   maxSpawnTries: 12
+  onLevelStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onLevelCompleted:
+    m_PersistentCalls:
+      m_Calls: []
+  onLevelFailed:
+    m_PersistentCalls:
+      m_Calls: []
+  onWaveStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onWaveCompleted:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!4 &1451494074
 Transform:
   m_ObjectHideFlags: 0
@@ -854,7 +898,7 @@ GameObject:
   - component: {fileID: 2113117390}
   - component: {fileID: 2113117389}
   m_Layer: 6
-  m_Name: Square
+  m_Name: Floor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -970,8 +1014,8 @@ Transform:
   m_GameObject: {fileID: 2113117388}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.0004, y: -4.5292, z: 20}
-  m_LocalScale: {x: 21.7009, y: 0.8616, z: 1}
+  m_LocalPosition: {x: 0.0004, y: -4.5445, z: 20}
+  m_LocalScale: {x: 21.7009, y: 0.8310234, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}

@@ -21,4 +21,21 @@ MonoBehaviour:
   rewardScore: 1000
   spawnIntervalMultiplier: 1
   timeScale: 1
-  waves: []
+  waves:
+  - startAt: 0
+    maxDuration: 0
+    interleaveEntries: 1
+    note: 
+    entries:
+    - enemyPrefab: {fileID: 7644627030359218984, guid: 61413fab839650b40a6fcadde2cc3b16, type: 3}
+      count: 6
+      interval: 3
+      startDelay: 0
+      intervalJitter: 3
+      perEntryMaxAlive: 0
+    - enemyPrefab: {fileID: 7644627030359218984, guid: 61413fab839650b40a6fcadde2cc3b16, type: 3}
+      count: 10
+      interval: 4
+      startDelay: 0
+      intervalJitter: 4
+      perEntryMaxAlive: 0

@@ -1,133 +1,107 @@
 using UnityEngine;
 
-/// <summary>
-/// World-space sprite health bar that binds to a CastleHealth on the same GameObject.
-/// Uses a generated 1x1 white sprite (no UI system required).
-/// </summary>
-[DisallowMultipleComponent]
-public class SimpleSpriteHealthBar : MonoBehaviour
+[RequireComponent(typeof(SpriteRenderer))]
+public class SimpleSproteHealthBar : MonoBehaviour
 {
     [Header("Binding")]
-    public CastleHealth health;           // if null, will GetComponent<CastleHealth>()
+    public CastleHealth health; // drag your Castle here, or it will auto-find on parent
 
     [Header("Bar Look & Placement")]
-    public float barWidth = 1.4f;         // world units
-    public float barHeight = 0.14f;       // world units
-    public float yOffset = 1.3f;          // height above object
-    public Color bgColor = new Color(0f, 0f, 0f, 0.65f);
-    public Color fgColor = new Color(0.2f, 0.85f, 0.2f, 1f);
-    public int sortingOrder = 80;         // draw above sprites
+    public float barWidth = 1.4f;
+    public float barHeight = 0.14f;
+    public float yOffset = 1.3f;
+    public Color bgColor = new Color(0f, 0f, 0f, 0.85f);
+    public Color fgColor = Color.green;
+    public int sortingOrder = 80;
 
-    // internals
-    Transform barRoot;
-    Transform barFill;
-    SpriteRenderer barFillSr;
-
-    static Sprite sWhite;                 // shared 1x1 sprite
+    // internal
+    private SpriteRenderer bg;
+    private SpriteRenderer fg;
+    private float currentNormalized = 1f;
 
     void Awake()
     {
-        if (!health) health = GetComponent<CastleHealth>();
-        if (!health)
-        {
-            Debug.LogError("[SimpleSpriteHealthBar] No CastleHealth found on object.");
-            enabled = false;
-            return;
-        }
+        // Create 1x1 white sprite if needed
+        var white = Texture2D.whiteTexture;
+        var sprite = Sprite.Create(white, new Rect(0, 0, white.width, white.height), new Vector2(0.5f, 0.5f), 100f);
 
-        EnsureWhite();
+        // Background
+        var bgObj = new GameObject("HB_BG");
+        bgObj.transform.SetParent(transform, false);
+        bg = bgObj.AddComponent<SpriteRenderer>();
+        bg.sprite = sprite;
+        bg.color = bgColor;
+        bg.sortingOrder = sortingOrder;
 
-        Build();
-        Redraw();
+        // Foreground
+        var fgObj = new GameObject("HB_FG");
+        fgObj.transform.SetParent(transform, false);
+        fg = fgObj.AddComponent<SpriteRenderer>();
+        fg.sprite = sprite;
+        fg.color = fgColor;
+        fg.sortingOrder = sortingOrder + 1;
 
-        // subscribe to redraw when damaged/destroyed
-        health.onCastleDamaged.AddListener(Redraw);
-        health.onCastleDestroyed.AddListener(() =>
-        {
-            Redraw();
-            // optional: hide when dead
-            if (barRoot) barRoot.gameObject.SetActive(false);
-        });
+        // initial size/pos
+        Layout(1f);
+
+        // Try auto-bind if not set
+        if (health == null)
+            health = GetComponentInParent<CastleHealth>();
     }
 
-    void OnDestroy()
+    void OnEnable()
     {
-        if (health)
+        if (health != null)
         {
-            health.onCastleDamaged.RemoveListener(Redraw);
+            health.onCastleDamaged.AddListener(UpdateBar);
+            health.onCastleDestroyed.AddListener(OnDestroyed);
+        }
+    }
+
+    void OnDisable()
+    {
+        if (health != null)
+        {
+            health.onCastleDamaged.RemoveListener(UpdateBar);
+            health.onCastleDestroyed.RemoveListener(OnDestroyed);
         }
     }
 
     void LateUpdate()
     {
-        if (barRoot)
+        // keep the bar at the offset above its parent
+        if (transform.parent != null)
         {
-            barRoot.position = transform.position + new Vector3(0f, yOffset, 0f);
-            barRoot.rotation = Quaternion.identity; // always upright
-            barRoot.localScale = Vector3.one;      // never mirror
+            var p = transform.parent.position;
+            transform.position = new Vector3(p.x, p.y + yOffset, p.z);
         }
     }
 
-    void Build()
+    public void UpdateBar(float normalized)
     {
-        // root
-        barRoot = new GameObject("HealthBar").transform;
-        barRoot.SetParent(transform, worldPositionStays: true);
-        barRoot.position = transform.position + new Vector3(0f, yOffset, 0f);
-
-        // bg
-        var bgSr = new GameObject("BG").AddComponent<SpriteRenderer>();
-        bgSr.sprite = sWhite;
-        bgSr.color = bgColor;
-        bgSr.sortingLayerID = GetSortingLayerIDFromParent();
-        bgSr.sortingOrder = sortingOrder;
-        bgSr.transform.SetParent(barRoot, true);
-        bgSr.transform.localPosition = Vector3.zero;
-        bgSr.transform.localScale = new Vector3(barWidth, barHeight, 1f);
-
-        // fill
-        barFillSr = new GameObject("Fill").AddComponent<SpriteRenderer>();
-        barFillSr.sprite = sWhite;
-        barFillSr.color = fgColor;
-        barFillSr.sortingLayerID = bgSr.sortingLayerID;
-        barFillSr.sortingOrder = sortingOrder + 1;
-        barFill = barFillSr.transform;
-        barFill.SetParent(barRoot, true);
-
-        // anchor fill to left edge; we scale X from left->right
-        barFill.localPosition = new Vector3(-barWidth * 0.5f, 0f, 0f);
-        barFill.localRotation = Quaternion.identity;
-        barFill.localScale = new Vector3(barWidth, barHeight, 1f);
+        currentNormalized = Mathf.Clamp01(normalized);
+        Layout(currentNormalized);
     }
 
-    int GetSortingLayerIDFromParent()
+    private void OnDestroyed()
     {
-        // try to keep the bar in same layer as any parent sprite
-        var sr = GetComponentInChildren<SpriteRenderer>();
-        return sr ? sr.sortingLayerID : 0;
+        UpdateBar(0f);
     }
 
-    void Redraw()
+    private void Layout(float normalized)
     {
-        if (!barFill || !health) return;
+        // center background
+        bg.transform.localPosition = Vector3.zero;
+        bg.transform.localScale = new Vector3(barWidth, barHeight, 1f);
 
-        float pct = Mathf.Clamp01((float)health.currentHealth / Mathf.Max(1, health.maxHealth));
-        float targetW = barWidth * pct;
+        // foreground left-aligned inside bg
+        // scale X by normalized, and shift so left edge sticks to bg's left
+        float fgWidth = Mathf.Max(0f, barWidth * normalized);
+        fg.transform.localScale = new Vector3(fgWidth, barHeight, 1f);
 
-        barFill.localScale = new Vector3(Mathf.Max(0f, targetW), barHeight, 1f);
-        barFill.localPosition = new Vector3(-barWidth * 0.5f + targetW * 0.5f, 0f, 0f);
-
-        // optional: hide when full
-        // barRoot.gameObject.SetActive(pct < 0.999f);
-    }
-
-    static void EnsureWhite()
-    {
-        if (sWhite) return;
-        var tex = new Texture2D(1, 1, TextureFormat.RGBA32, false);
-        tex.SetPixel(0, 0, Color.white);
-        tex.Apply();
-        sWhite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
-        sWhite.name = "HealthBar_1x1";
+        // Position fg so its left edge aligns with bg's left edge
+        float leftEdge = -barWidth * 0.5f;
+        float fgCenterX = leftEdge + fgWidth * 0.5f;
+        fg.transform.localPosition = new Vector3(fgCenterX, 0f, 0f);
     }
 }

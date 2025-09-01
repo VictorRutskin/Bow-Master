@@ -15,7 +15,7 @@ public class Spawner : MonoBehaviour
 
     [Header("Refs")]
     public Transform castle;                // your castle transform
-    public Transform defaultCastle;         // used for enemies that need a target (e.g., Goblin)
+    public Transform defaultCastle;         // used for enemies that need a target (e.g., Enemy)
 
     [Header("Timing (legacy, used only if you call ManualTick)")]
     public float spawnInterval = 10.0f;     // legacy/manual
@@ -268,12 +268,18 @@ public class Spawner : MonoBehaviour
             }
 
             // 4) wire refs
-            var gob = go.GetComponent<Goblin>();
-            if (gob) gob.castle = castle ? castle : defaultCastle;
+            var enemy = go.GetComponent<Enemy>();
+            var target = castle ? castle : defaultCastle;
+            if (enemy)
+            {
+                if (!target) Debug.LogWarning("[Spawner] No castle/defaultCastle set. Enemies won't move.");
+                enemy.SetTarget(target);
+            }
+
             var rb = go.GetComponent<Rigidbody2D>();
             if (rb) rb.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-            // 5) overlap guard — only block **other Goblins**
+            // 5) overlap guard — only block **other Enemys**
             if (!disableOverlapGuard && enemyMask.value != 0 && bodyCol)
             {
                 var filter = new ContactFilter2D { useLayerMask = true, layerMask = enemyMask, useTriggers = false };
@@ -286,7 +292,7 @@ public class Spawner : MonoBehaviour
                     var c = hits[i];
                     if (!c) continue;
                     if (c.transform.root == go.transform.root) continue; // self
-                    if (!c.GetComponentInParent<Goblin>()) continue;     // only goblins block
+                    if (!c.GetComponentInParent<Enemy>()) continue;
                     blocked = true;
 
 #if UNITY_EDITOR
@@ -295,7 +301,7 @@ public class Spawner : MonoBehaviour
                     break;
                 }
 
-                // optional proximity buffer using expanded bounds (also only goblins)
+                // optional proximity buffer using expanded bounds (also only enemys)
                 if (!blocked && spawnPadding > 0f)
                 {
                     var b = bodyCol.bounds;
@@ -307,7 +313,7 @@ public class Spawner : MonoBehaviour
                         if (!c) continue;
                         if (c.transform.root == go.transform.root) continue;
                         if (c.isTrigger) continue;
-                        if (!c.GetComponentInParent<Goblin>()) continue; // only goblins block
+                        if (!c.GetComponentInParent<Enemy>()) continue; // only enemys block
                         blocked = true;
 
 #if UNITY_EDITOR

@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fabb529be0457f647bc321a48251b943, type: 3}
-  m_Name: Level_1
+  m_Name: Level_3
   m_EditorClassIdentifier: 
   levelNumber: 1
   levelName: Level 1
@@ -35,12 +35,6 @@ MonoBehaviour:
       perEntryMaxAlive: 0
     - enemyPrefab: {fileID: 7644627030359218984, guid: 61413fab839650b40a6fcadde2cc3b16, type: 3}
       count: 10
-      interval: 4
-      startDelay: 0
-      intervalJitter: 4
-      perEntryMaxAlive: 0
-    - enemyPrefab: {fileID: 7644627030359218984, guid: f9ddc1cda148aef43b4ff693ef46b40e, type: 3}
-      count: 3
       interval: 4
       startDelay: 0
       intervalJitter: 4

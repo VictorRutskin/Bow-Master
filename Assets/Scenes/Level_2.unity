@@ -858,7 +858,7 @@ MonoBehaviour:
   debugSpawns: 1
   disableOverlapGuard: 0
   fallbackToFlatGroundIfRayMiss: 1
-  level: {fileID: 11400000, guid: a0ee134f8552783458f8db5b62246396, type: 2}
+  level: {fileID: 11400000, guid: 56b6c243fd3473449ac4f78a9e7472d4, type: 2}
   autoStart: 1
   castle: {fileID: 1010778764}
   defaultCastle: {fileID: 1010778764}

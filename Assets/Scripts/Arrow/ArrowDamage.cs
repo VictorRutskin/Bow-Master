@@ -130,10 +130,10 @@ public class ArrowDamage : MonoBehaviour
         if (hasHit) return;
         hasHit = true;
 
-        var goblin = other.GetComponent<Goblin>() ?? other.GetComponentInParent<Goblin>();
-        if (goblin != null)
+        var enemy = other.GetComponent<Enemy>() ?? other.GetComponentInParent<Enemy>();
+        if (enemy != null)
         {
-            goblin.TakeDamage(damage, (Vector2)transform.position, knockbackMultiplier);
+            enemy.TakeDamage(damage, (Vector2)transform.position, knockbackMultiplier);
             SpawnBloodVfx(other);
             StickAt(hit,
                 parent: (other.attachedRigidbody ? other.attachedRigidbody.transform : other.transform),

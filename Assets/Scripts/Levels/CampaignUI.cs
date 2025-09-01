@@ -3,44 +3,25 @@ using UnityEngine.SceneManagement;
 
 public class CampaignUI : MonoBehaviour
 {
-    [System.Serializable]
-    public class LevelDef
-    {
-        public string displayName;  // e.g., "Level 1"
-        public string sceneName;    // e.g., "Level_1" (must match exactly in Build Settings)
-    }
+    [System.Serializable] public class LevelDef { public string displayName; public string sceneName; }
 
-    [Header("Levels (ordered)")]
     public LevelDef[] levels;
+    public Transform contentParent;          // LevelScroll/Viewport/Content
+    public LevelButton levelButtonPrefab;    // the prefab
 
-    [Header("UI")]
-    public Transform contentParent;      // drag your Content transform here
-    public LevelButton levelButtonPrefab; // drag your LevelButton prefab here
-
-    void OnEnable() // Rebuild when the panel is shown
-    {
-        BuildList();
-    }
+    void OnEnable() { BuildList(); }
 
     void BuildList()
     {
-        // Clear existing children
-        for (int i = contentParent.childCount - 1; i >= 0; i--)
-            Destroy(contentParent.GetChild(i).gameObject);
+        for (int i = contentParent.childCount - 1; i >= 0; i--) Destroy(contentParent.GetChild(i).gameObject);
 
-        int highestUnlocked = Progress.GetHighestUnlocked(); // 0-based; 0 means "Level 1" unlocked
-
+        int highestUnlocked = Progress.GetHighestUnlocked(); // 0-based
         for (int i = 0; i < levels.Length; i++)
         {
             var lb = Instantiate(levelButtonPrefab, contentParent);
             int idx = i;
-            bool isUnlocked = idx <= highestUnlocked;
-
-            lb.Set(levels[i].displayName, isUnlocked, () =>
-            {
-                // Load the selected scene
-                SceneManager.LoadScene(levels[idx].sceneName);
-            });
+            bool unlocked = idx <= highestUnlocked;
+            lb.Set(levels[i].displayName, unlocked, () => SceneManager.LoadScene(levels[idx].sceneName));
         }
     }
 }

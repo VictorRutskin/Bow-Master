@@ -174,9 +174,15 @@ public class Enemy : MonoBehaviour
         if (Time.time - lastAttackTime < AttackCooldown) return;
         lastAttackTime = Time.time;
 
-        var ch = castle ? castle.GetComponent<CastleHealth>() : null;
-        if (ch) ch.TakeDamage(TouchDamage);
+        CastleHealth ch = null;
+
+        if (castle)
+            ch = castle.GetComponentInParent<CastleHealth>();   // <-- key change
+
+        if (ch != null)
+            ch.TakeDamage(TouchDamage);
     }
+
 
     public virtual void TakeDamage(int amount, Vector2 hitFrom, float kbMultiplier = 1f)
     {
